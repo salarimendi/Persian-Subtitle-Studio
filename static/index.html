@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>زیرنویس فارسی محلی</title>
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<header>
+  <h1>زیرنویس فارسی محلی</h1>
+  <span id="engine" class="muted"></span>
+</header>
+<div id="banner" class="banner" hidden></div>
+
+<main>
+  <section class="col">
+    <div class="card" id="queueCard">
+      <h2>ویدیوها</h2>
+      <label id="drop" class="drop" tabindex="0">
+        <input id="file" type="file" accept="video/*,.mp4,.mov,.mkv,.avi,.webm,.m4v" multiple hidden>
+        <b>ویدیو را اینجا رها کنید یا برای انتخاب بزنید</b>
+        <span class="muted">حداکثر ۵ دقیقه برای هر ویدیو. چند ویدیو را می‌توان با هم اضافه کرد؛ یکی‌یکی پردازش می‌شوند.</span>
+      </label>
+      <div class="row">
+        <label>زبان گفتار
+          <select id="lang"><option value="fa">فارسی</option><option value="auto">تشخیص خودکار</option></select>
+        </label>
+        <span id="uploadMsg" class="muted"></span>
+      </div>
+      <ul id="notes" class="notes"></ul>
+      <ul id="jobs" class="jobs"></ul>
+    </div>
+
+    <div class="card" id="stageCard">
+      <h2>پیش‌نمایش</h2>
+      <div class="stage" id="stage">
+        <video id="vid" controls playsinline></video>
+        <div id="ov" class="ov" hidden><span id="ovText"></span></div>
+        <p id="stageEmpty" class="muted empty">یک ویدیو را از فهرست انتخاب کنید.</p>
+      </div>
+      <p class="muted small">پیش‌نمایش تقریبی است؛ شکل نهایی را رندر libass در FFmpeg می‌سازد. ایموجی در خروجی ممکن است تک‌رنگ باشد.</p>
+    </div>
+
+    <div class="card" id="styleCard">
+      <h2>ظاهر زیرنویس</h2>
+      <div class="grid">
+        <label>فونت
+          <select data-k="font">
+            <option>Tahoma</option><option>Segoe UI</option><option>Arial</option>
+            <option value="Vazirmatn">Vazirmatn (فایل در پوشهٔ fonts)</option>
+          </select></label>
+        <label>اندازه (درصد ارتفاع ویدیو)<input type="range" data-k="size_pct" min="2" max="14" step="0.5"></label>
+        <label>رنگ متن<input type="color" data-k="color"></label>
+        <label>رنگ حاشیه<input type="color" data-k="outline_color"></label>
+        <label>ضخامت حاشیه<input type="range" data-k="outline_w" min="0" max="12" step="0.5"></label>
+        <label>محل نمایش
+          <select data-k="position"><option value="bottom">پایین</option><option value="middle">وسط</option><option value="top">بالا</option></select></label>
+        <label>فاصله از لبه<input type="range" data-k="margin_pct" min="0" max="30" step="1"></label>
+        <label class="check"><input type="checkbox" data-k="bold"> متن ضخیم</label>
+        <label class="check"><input type="checkbox" data-k="bg_on"> پس‌زمینهٔ پشت متن</label>
+        <label>رنگ پس‌زمینه<input type="color" data-k="bg_color"></label>
+        <label>شفافیت پس‌زمینه<input type="range" data-k="bg_opacity" min="0.1" max="1" step="0.05"></label>
+        <label>رنگ کلمهٔ تأکیدی<input type="color" data-k="emphasis_color"></label>
+      </div>
+    </div>
+  </section>
+
+  <section class="col">
+    <div class="card" id="segCard">
+      <h2>متن زیرنویس</h2>
+      <div class="row tools">
+        <label class="check"><input id="fxOn" type="checkbox" checked> افکت‌ها فعال</label>
+        <label>افکت همهٔ بخش‌ها
+          <select id="fxAll"><option value="none">بدون افکت</option><option value="fadein">ظاهر شدن تدریجی</option>
+          <option value="fadeout">محو شدن</option><option value="fadeboth">ظاهر و محو</option><option value="pop">بزرگ‌شدن کوتاه</option></select></label>
+        <button id="fxApply" type="button">اعمال</button>
+      </div>
+      <div class="row emojis" id="emojiBar" aria-label="ایموجی سریع"></div>
+      <ol id="segs" class="segs"></ol>
+      <div class="row">
+        <button id="addSeg" type="button">افزودن بخش</button>
+        <button id="saveSegs" type="button">ذخیرهٔ ویرایش‌ها و SRT</button>
+      </div>
+    </div>
+
+    <div class="card" id="outCard">
+      <h2>خروجی</h2>
+      <div id="state" class="state">ویدیویی انتخاب نشده است.</div>
+      <div class="bar" id="barWrap" hidden><i id="bar"></i></div>
+      <ul id="warns" class="notes warn"></ul>
+      <div class="row">
+        <button id="render" class="primary" type="button" disabled>چسباندن زیرنویس و ساخت MP4</button>
+        <button id="openOut" type="button">باز کردن پوشهٔ خروجی</button>
+      </div>
+      <div id="links" class="links"></div>
+    </div>
+  </section>
+</main>
+<script src="app.js"></script>
+</body>
+</html>
