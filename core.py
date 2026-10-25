@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import atexit
 import json
-import os
 import queue
 import re
 import secrets
@@ -16,9 +15,9 @@ import traceback
 from dataclasses import dataclass, field
 from pathlib import Path
 
+import asr
+
 MAX_SECONDS = 300
-WHISPER_MODEL = os.environ.get("SUBTITLE_WHISPER_MODEL", "oi-uae/farsi-faster-whisper-large-v3")
-WHISPER_INITIAL_PROMPT = os.environ.get("SUBTITLE_WHISPER_PROMPT", "").strip()
 IS_WIN = sys.platform.startswith("win")
 EMOJI_FONT = "Segoe UI Emoji" if IS_WIN else "Noto Color Emoji"
 FFMPEG_HELP = (
@@ -96,27 +95,6 @@ def make_srt(segments: list[dict]) -> str:
         n += 1
         out.append(f"{n}\n{srt_time(s['start'])} --> {srt_time(s['end'])}\n{text}\n")
     return "\n".join(out)
-
-
-def group_words(words: list[tuple[float, float, str]], max_chars=36, max_dur=4.5, max_gap=0.8) -> list[dict]:
-    """کلمه‌های Whisper را به خطوط کوتاه زیرنویس تبدیل می‌کند."""
-    segs, cur = [], []
-
-    def flush():
-        if cur:
-            segs.append({"start": cur[0][0], "end": cur[-1][1], "text": " ".join(w[2] for w in cur).strip()})
-            cur.clear()
-
-    for w in words:
-        if cur:
-            chars = sum(len(x[2]) + 1 for x in cur) + len(w[2])
-            if chars > max_chars or w[1] - cur[0][0] > max_dur or w[0] - cur[-1][1] > max_gap:
-                flush()
-        cur.append(w)
-        if re.search(r"[.!؟?!…]$", w[2]) and sum(len(x[2]) + 1 for x in cur) > 14:
-            flush()
-    flush()
-    return segs
 
 
 # ---------------------------------------------------------------- ASS
@@ -260,7 +238,6 @@ class Manager:
 
     def status(self) -> dict:
         import importlib.util
-        model_cache = self.models / f"models--{WHISPER_MODEL.replace('/', '--')}"
         ver = ""
         if self.ffmpeg:
             try:
@@ -270,7 +247,7 @@ class Manager:
         return {
             "ffmpeg": self.tools_ok(), "ffmpeg_version": ver, "ffmpeg_help": "" if self.tools_ok() else FFMPEG_HELP,
             "whisper_installed": importlib.util.find_spec("faster_whisper") is not None,
-            "model_cached": any(model_cache.glob("snapshots/*/model.bin")),
+            "model": asr.MODEL_REPO, "model_cached": asr.is_complete(asr.model_dir(self.models)),
             "max_seconds": MAX_SECONDS, "output_dir": str(self.output),
         }
 
@@ -318,7 +295,7 @@ class Manager:
     def register(self, jid: str, display_name: str, ext: str, language: str) -> Job:
         d = self.work / jid
         info = self.probe(d / f"input{ext}")
-        job = Job(jid, display_name, ext, "fa", d, **info)
+        job = Job(jid, display_name, ext, "fa" if language != "auto" else "auto", d, **info)
         with self.lock:
             self.jobs[jid] = job
         self.q.put(("transcribe", jid))
@@ -418,6 +395,7 @@ class Manager:
                 k, _, v = line.strip().partition("=")
                 if k in ("out_time_us", "out_time_ms") and v.isdigit() and total > 0:
                     on_progress(min(100.0, int(v) / 1e6 / total * 100))
+            p.stdout.close()
             rc = p.wait()
         if rc != 0:
             tail = log.read_text(encoding="utf-8", errors="replace").strip()[-600:]
@@ -425,24 +403,14 @@ class Manager:
         log.unlink(missing_ok=True)
 
     def _get_model(self, job: Job):
-        if self._model:
-            return self._model
-        try:
-            from faster_whisper import WhisperModel
-        except ImportError:
-            raise UserError("کتابخانهٔ faster-whisper نصب نیست. start.bat را دوباره اجرا کنید.")
-        self.models.mkdir(exist_ok=True)
-        kw = dict(device="cpu", compute_type="int8", cpu_threads=max(1, min(4, os.cpu_count() or 1)),
-                  num_workers=1, download_root=str(self.models))
-        job.stage, job.progress = "بارگذاری مدل Whisper", None
-        try:
-            self._model = WhisperModel(WHISPER_MODEL, local_files_only=True, **kw)
-        except Exception:  # noqa: BLE001  مدل هنوز دانلود نشده
-            job.stage = "دریافت مدل Whisper (فقط بار اول، نیاز به اینترنت)"
+        if not self._model:
+            job.progress = None
+            def status(msg):
+                job.stage = msg
             try:
-                self._model = WhisperModel(WHISPER_MODEL, local_files_only=False, **kw)
-            except Exception as e:  # noqa: BLE001
-                raise UserError(f"دریافت یا بارگذاری مدل ناموفق بود. اتصال اینترنت را بررسی کنید. ({e})")
+                self._model = asr.load_model(self.models, on_status=status)
+            except asr.ASRError as e:
+                raise UserError(str(e))
         return self._model
 
     def _transcribe(self, job: Job):
@@ -457,28 +425,16 @@ class Manager:
         model = self._get_model(job)
         job.stage, job.progress = "تبدیل گفتار به متن", 0
         try:
-            gen, _info = model.transcribe(
-                str(job.dir / f"input{job.ext}"), language="fa", task="transcribe", beam_size=5,
-                temperature=0, condition_on_previous_text=True, initial_prompt=WHISPER_INITIAL_PROMPT or None,
-                vad_filter=True, word_timestamps=True)
-            words, whole = [], []
-            for seg in gen:
-                job.progress = min(99.0, seg.end / job.duration * 100)
-                if seg.words:
-                    words += [(w.start, w.end, w.word.strip()) for w in seg.words if w.word.strip()]
-                elif seg.text.strip():
-                    if words:
-                        whole.append(group_words(words)); words = []
-                    whole.append([{"start": seg.start, "end": seg.end, "text": seg.text.strip()}])
-        except UserError:
-            raise
-        except Exception as e:  # noqa: BLE001
-            raise UserError(f"خطا در تبدیل گفتار به متن: {e}")
-        if words:
-            whole.append(group_words(words))
-        segs = [dict(s, effect="none", emphasis="") for part in whole for s in part]
+            segs = asr.transcribe(model, str(job.dir / f"input{job.ext}"), job.duration, job.language,
+                                  lambda p: setattr(job, "progress", p))
+        except asr.ASRError as e:
+            raise UserError(str(e))
+        segs = [dict(s, effect="none", emphasis="") for s in segs]
         if not segs:
             job.warnings.append("گفتاری تشخیص داده نشد. می‌توانید بخش‌ها را دستی اضافه کنید.")
+        loops = sum(asr.has_loop(s["text"]) for s in segs)
+        if loops:
+            job.warnings.append(f"{loops} بخش تکرار غیرعادی یک کلمه دارد (نشانهٔ خطای مدل)؛ متن را بررسی کنید.")
         job.segments = self._clean(segs, job.duration)
         self._alloc_base(job)
         (self.output / f"{job.base}.srt").write_text(make_srt(job.segments), encoding="utf-8-sig")

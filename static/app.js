@@ -34,7 +34,7 @@ async function loadStatus() {
   const msgs = [];
   if (!s.ffmpeg) msgs.push(s.ffmpeg_help);
   if (!s.whisper_installed) msgs.push("کتابخانهٔ faster-whisper نصب نیست. start.bat را دوباره اجرا کنید.");
-  if (s.whisper_installed && !s.model_cached) msgs.push("اولین تبدیل گفتار، مدل فارسی Whisper (حدود ۳٫۱ گیگابایت) را دانلود می‌کند؛ بعد از آن از کش محلی استفاده می‌شود.");
+  if (s.whisper_installed && !s.model_cached) msgs.push("اولین تبدیل گفتار، مدل فارسی (حدود ۳ گیگابایت) را یک‌بار در پوشهٔ models دانلود می‌کند و حدود ۳ گیگابایت RAM مصرف می‌کند؛ بعد از آن همه‌چیز محلی است.");
   b.hidden = !msgs.length; b.textContent = msgs.join(" ");
   b.className = "banner" + (!s.ffmpeg || !s.whisper_installed ? " err" : "");
   $("engine").textContent = s.ffmpeg ? s.ffmpeg_version.split(" ").slice(0, 3).join(" ") : "FFmpeg یافت نشد";
