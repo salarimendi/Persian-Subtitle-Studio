@@ -7,95 +7,138 @@
 <link rel="stylesheet" href="app.css">
 </head>
 <body>
-<header>
-  <h1>زیرنویس فارسی محلی</h1>
-  <span id="engine" class="muted"></span>
-</header>
+<header><h1>زیرنویس فارسی محلی</h1><span id="engine" class="muted"></span></header>
 <div id="banner" class="banner" hidden></div>
-
 <main>
-  <section class="col">
-    <div class="card" id="queueCard">
-      <h2>ویدیوها</h2>
-      <label id="drop" class="drop" tabindex="0">
-        <input id="file" type="file" accept="video/*,.mp4,.mov,.mkv,.avi,.webm,.m4v" multiple hidden>
-        <b>ویدیو را اینجا رها کنید یا برای انتخاب بزنید</b>
-        <span class="muted">حداکثر ۵ دقیقه برای هر ویدیو. چند ویدیو را می‌توان با هم اضافه کرد؛ یکی‌یکی پردازش می‌شوند.</span>
-      </label>
-      <div class="row">
-        <label>زبان گفتار
-          <select id="lang"><option value="fa">فارسی</option><option value="auto">تشخیص خودکار</option></select>
-        </label>
-        <span id="uploadMsg" class="muted"></span>
-      </div>
-      <ul id="notes" class="notes"></ul>
-      <ul id="jobs" class="jobs"></ul>
-    </div>
-
-    <div class="card" id="stageCard">
-      <h2>پیش‌نمایش</h2>
-      <div class="stage" id="stage">
-        <video id="vid" controls playsinline></video>
-        <div id="ov" class="ov" hidden><span id="ovText"></span></div>
-        <p id="stageEmpty" class="muted empty">یک ویدیو را از فهرست انتخاب کنید.</p>
-      </div>
-      <p class="muted small">پیش‌نمایش تقریبی است؛ شکل نهایی را رندر libass در FFmpeg می‌سازد. ایموجی در خروجی ممکن است تک‌رنگ باشد.</p>
-    </div>
-
-    <div class="card" id="styleCard">
-      <h2>ظاهر زیرنویس</h2>
+<section class="col">
+  <div class="card">
+    <h2>ویدیوها</h2>
+    <label id="drop" class="drop" tabindex="0">
+      <input id="file" type="file" accept="video/*,.mp4,.mov,.mkv,.avi,.webm,.m4v" multiple hidden>
+      <b>ویدیو را اینجا رها کنید یا برای انتخاب بزنید</b>
+      <span class="muted">حداکثر ۵ دقیقه برای هر ویدیو؛ چند ویدیو یکی‌یکی پردازش می‌شوند.</span>
+    </label>
+    <div class="row"><label>زبان گفتار <select id="lang"><option value="fa">فارسی</option><option value="auto">تشخیص خودکار</option></select></label>
+      <span id="uploadMsg" class="muted"></span></div>
+    <ul id="notes" class="notes"></ul>
+    <ul id="jobs" class="jobs"></ul>
+    <details class="open"><summary>باز کردن پروژهٔ قبلی (بدون رونویسی دوباره)</summary>
       <div class="grid">
-        <label>فونت
-          <select data-k="font">
-            <option>Tahoma</option><option>Segoe UI</option><option>Arial</option>
-            <option value="Vazirmatn">Vazirmatn (فایل در پوشهٔ fonts)</option>
-          </select></label>
-        <label>اندازه (درصد ارتفاع ویدیو)<input type="range" data-k="size_pct" min="2" max="14" step="0.5"></label>
-        <label>رنگ متن<input type="color" data-k="color"></label>
-        <label>رنگ حاشیه<input type="color" data-k="outline_color"></label>
-        <label>ضخامت حاشیه<input type="range" data-k="outline_w" min="0" max="12" step="0.5"></label>
-        <label>محل نمایش
-          <select data-k="position"><option value="bottom">پایین</option><option value="middle">وسط</option><option value="top">بالا</option></select></label>
-        <label>فاصله از لبه<input type="range" data-k="margin_pct" min="0" max="30" step="1"></label>
-        <label class="check"><input type="checkbox" data-k="bold"> متن ضخیم</label>
-        <label class="check"><input type="checkbox" data-k="bg_on"> پس‌زمینهٔ پشت متن</label>
-        <label>رنگ پس‌زمینه<input type="color" data-k="bg_color"></label>
-        <label>شفافیت پس‌زمینه<input type="range" data-k="bg_opacity" min="0.1" max="1" step="0.05"></label>
-        <label>رنگ کلمهٔ تأکیدی<input type="color" data-k="emphasis_color"></label>
+        <label>پروژهٔ ذخیره‌شده در output<select id="openSaved"><option value="">— انتخاب نشده —</option></select></label>
+        <label>یا فایل زیرنویس/پروژه (.json، .srt، .ass، .txt)<input id="openSub" type="file" accept=".json,.srt,.ass,.ssa,.txt"></label>
+        <label>ویدیوی مربوط (الزامی)<input id="openVideo" type="file" accept="video/*,.mp4,.mov,.mkv,.avi,.webm,.m4v"></label>
+        <label>جابجایی زمان SRT/ASS (ثانیه، برای حذف مدت کاور)<input id="openShift" type="number" step="0.1" value="0"></label>
+        <label class="check"><input id="openOver" type="checkbox"> ادامه روی همان نام فایل‌ها (فایل‌های قبلی بازنویسی شوند)</label>
+        <button id="openBtn" type="button">باز کردن پروژه</button>
       </div>
-    </div>
-  </section>
+      <p class="muted small">فایل ویدیوی اصلی هرگز تغییر نمی‌کند. بدون تیک بالا، خروجی‌ها با نام تازه ذخیره می‌شوند.</p>
+    </details>
+  </div>
 
-  <section class="col">
-    <div class="card" id="segCard">
-      <h2>متن زیرنویس</h2>
-      <div class="row tools">
-        <label class="check"><input id="fxOn" type="checkbox" checked> افکت‌ها فعال</label>
-        <label>افکت همهٔ بخش‌ها
-          <select id="fxAll"><option value="none">بدون افکت</option><option value="fadein">ظاهر شدن تدریجی</option>
-          <option value="fadeout">محو شدن</option><option value="fadeboth">ظاهر و محو</option><option value="pop">بزرگ‌شدن کوتاه</option></select></label>
-        <button id="fxApply" type="button">اعمال</button>
-      </div>
-      <div class="row emojis" id="emojiBar" aria-label="ایموجی سریع"></div>
-      <ol id="segs" class="segs"></ol>
-      <div class="row">
-        <button id="addSeg" type="button">افزودن بخش</button>
-        <button id="saveSegs" type="button">ذخیرهٔ ویرایش‌ها و SRT</button>
-      </div>
+  <div class="card">
+    <h2>پیش‌نمایش</h2>
+    <div class="stage" id="stage">
+      <video id="vid" controls playsinline></video>
+      <img id="frameImg" alt="" hidden>
+      <div id="ov" class="ov" hidden></div>
+      <p id="stageEmpty" class="muted empty">یک ویدیو را از فهرست انتخاب کنید.</p>
     </div>
+    <p id="pvNote" class="muted small">هنگام توقف، فریم واقعی با همان موتور خروجی نهایی (libass) نشان داده می‌شود؛ هنگام پخش نمایش تقریبی است.</p>
+  </div>
 
-    <div class="card" id="outCard">
-      <h2>خروجی</h2>
-      <div id="state" class="state">ویدیویی انتخاب نشده است.</div>
-      <div class="bar" id="barWrap" hidden><i id="bar"></i></div>
-      <ul id="warns" class="notes warn"></ul>
-      <div class="row">
-        <button id="render" class="primary" type="button" disabled>چسباندن زیرنویس و ساخت MP4</button>
-        <button id="openOut" type="button">باز کردن پوشهٔ خروجی</button>
-      </div>
-      <div id="links" class="links"></div>
+  <div class="card" id="styleCard">
+    <h2>قالب‌های آماده</h2>
+    <div class="row" id="presets"></div>
+    <h2>تایپوگرافی</h2>
+    <div class="grid">
+      <label>فونت<input data-k="font" list="fontlist" autocomplete="off"><datalist id="fontlist"></datalist></label>
+      <label>اندازه<input type="range" data-k="size_pct" min="2" max="14" step="0.1"></label>
+      <label>رنگ متن<input type="color" data-k="color"></label>
+      <label class="check"><input type="checkbox" data-k="bold"> ضخیم</label>
+      <label>رنگ حاشیه<input type="color" data-k="outline_color"></label>
+      <label>ضخامت حاشیه<input type="range" data-k="outline_w" min="0" max="14" step="0.5"></label>
+      <label>ضخامت سایه<input type="range" data-k="shadow_w" min="0" max="12" step="0.5"></label>
+      <label>رنگ سایه<input type="color" data-k="shadow_color"></label>
+      <label>شفافیت سایه<input type="range" data-k="shadow_opacity" min="0" max="1" step="0.05"></label>
+      <label>فاصلهٔ خطوط<input type="range" data-k="line_spacing" min="0.9" max="2" step="0.05"></label>
+      <label>محل نمایش<select data-k="position"><option value="bottom">پایین</option><option value="middle">وسط</option><option value="top">بالا</option></select></label>
+      <label>فاصله از لبه<input type="range" data-k="margin_pct" min="0" max="40" step="1"></label>
     </div>
-  </section>
+    <h2>پس‌زمینهٔ زیرنویس</h2>
+    <div class="grid">
+      <label class="check"><input type="checkbox" data-k="bg_on"> کادر پشت متن</label>
+      <label>رنگ کادر<input type="color" data-k="bg_color"></label>
+      <label>شفافیت کادر<input type="range" data-k="bg_opacity" min="0.05" max="1" step="0.05"></label>
+      <label>گردی گوشه‌ها<input type="range" data-k="bg_radius" min="0" max="1" step="0.05"></label>
+      <label>فاصلهٔ داخلی افقی<input type="range" data-k="bg_pad_x" min="0" max="1.5" step="0.05"></label>
+      <label>فاصلهٔ داخلی عمودی<input type="range" data-k="bg_pad_y" min="0" max="1" step="0.02"></label>
+      <label>ضخامت حاشیهٔ کادر<input type="range" data-k="bg_border_w" min="0" max="10" step="0.5"></label>
+      <label>رنگ حاشیهٔ کادر<input type="color" data-k="bg_border_color"></label>
+    </div>
+    <h2>افکت و برجسته‌سازی کلمه</h2>
+    <div class="grid">
+      <label>افکت کلمهٔ فعال<select data-k="word_mode"><option value="none">بدون افکت</option><option value="active">رنگ کلمهٔ فعال</option>
+        <option value="smooth">رنگ نرم کلمهٔ فعال</option><option value="progressive">پرشدن تدریجی (کاراوکه)</option><option value="pop">رنگ + بزرگ‌شدن</option></select></label>
+      <label>رنگ کلمهٔ فعال<input type="color" data-k="word_color"></label>
+      <label>افکت ورود/خروج همهٔ بخش‌ها<select data-k="effect_all"><option value="none">بدون افکت</option><option value="fadein">ظاهر شدن</option>
+        <option value="fadeout">محو شدن</option><option value="fadeboth">ظاهر و محو</option><option value="pop">بزرگ‌شدن کوتاه</option></select></label>
+      <label>رنگ کلمهٔ تأکیدی<input type="color" data-k="emphasis_color"></label>
+    </div>
+    <h2>شکست جمله، زمان‌بندی و نگارش</h2>
+    <div class="grid">
+      <label>حداکثر کاراکتر هر خط<input type="number" data-k="max_chars" min="10" max="80"></label>
+      <label>حداکثر کلمه هر خط (۰ = بدون حد)<input type="number" data-k="max_words" min="0" max="20"></label>
+      <label>حداقل مدت نمایش (ثانیه)<input type="number" data-k="min_dur" min="0.1" max="5" step="0.1"></label>
+      <label>فاصله بین زیرنویس‌ها (ثانیه)<input type="number" data-k="gap" min="0" max="1" step="0.02"></label>
+      <label>ارقام<select data-k="digits"><option value="keep">همان‌طور که هست</option><option value="persian">فارسی ۱۲۳</option><option value="latin">انگلیسی 123</option></select></label>
+      <label class="check"><input type="checkbox" data-k="fix_punct"> اصلاح علائم (؟ ، ؛)</label>
+    </div>
+    <p class="muted small">هر زیرنویس حداکثر دو خط است؛ متن بلندتر خودکار به چند زیرنویس پشت‌سرهم تقسیم می‌شود.</p>
+  </div>
+</section>
+
+<section class="col">
+  <div class="card">
+    <h2>متن زیرنویس</h2>
+    <div class="row tools">
+      <label>افکت همهٔ بخش‌ها
+        <select id="fxAll"><option value="none">بدون افکت</option><option value="fadein">ظاهر شدن تدریجی</option><option value="fadeout">محو شدن</option>
+        <option value="fadeboth">ظاهر و محو</option><option value="pop">بزرگ‌شدن کوتاه</option></select></label>
+      <button id="fxApply" type="button">اعمال</button>
+    </div>
+    <div class="row emojis" id="emojiBar"></div>
+    <ol id="segs" class="segs"></ol>
+    <div class="row"><button id="addSeg" type="button">افزودن بخش</button><button id="saveSegs" type="button">ذخیرهٔ پروژه (JSON، TXT، SRT)</button></div>
+  </div>
+
+  <div class="card">
+    <h2>کاور و قالب خروجی</h2>
+    <div class="grid">
+      <label>چیدمان خروجی<select id="reframe"><option value="original">همان اندازهٔ ویدیو</option><option value="9:16">عمودی ۹:۱۶ (۱۰۸۰×۱۹۲۰، برش مرکزی)</option>
+        <option value="1:1">مربع ۱:۱ (۱۰۸۰×۱۰۸۰، برش مرکزی)</option><option value="16:9">افقی ۱۶:۹ (۱۹۲۰×۱۰۸۰، برش مرکزی)</option></select></label>
+      <label>تصویر کاور<input id="coverFile" type="file" accept="image/*"></label>
+      <label>مدت نمایش کاور در ابتدا (ثانیه، ۰ = بدون کاور شروع)<input id="coverDur" type="number" min="0" max="10" step="0.5"></label>
+      <label>جای‌گیری کاور<select id="coverFit"><option value="fill">پر کردن کادر (برش)</option><option value="fit">کامل با حاشیهٔ سیاه</option></select></label>
+      <label class="check"><input id="embedArt" type="checkbox"> تعبیه کاور به‌عنوان Artwork فایل MP4</label>
+      <div><img id="coverImg" class="cover" alt="" hidden><button id="coverClear" type="button" hidden>حذف کاور</button></div>
+    </div>
+    <p class="muted small">تامنیل ویندوز: برای احتمال بهتر نمایش در Explorer، کاور را حداقل ۱ ثانیه در ابتدا بگذارید و Artwork را تعبیه کنید. فایل <code>_thumb.jpg</code> هم برای آپلود در پلتفرم‌ها ساخته می‌شود. وقتی کاور شروع فعال است، SRT/ASS به‌اندازهٔ همان مدت جابه‌جا می‌شوند تا با MP4 نهایی هماهنگ باشند.</p>
+  </div>
+
+  <div class="card">
+    <h2>خروجی</h2>
+    <div class="row"><b>ساخت:</b>
+      <label class="check"><input type="checkbox" class="fmt" value="mp4"> MP4 با زیرنویس چسبیده</label>
+      <label class="check"><input type="checkbox" class="fmt" value="srt"> SRT</label>
+      <label class="check"><input type="checkbox" class="fmt" value="ass"> ASS</label></div>
+    <div id="state" class="state">ویدیویی انتخاب نشده است.</div>
+    <div class="bar" id="barWrap" hidden><i id="bar"></i></div>
+    <ul id="warns" class="notes warn"></ul>
+    <div class="row"><button id="render" class="primary" type="button" disabled>ساخت خروجی</button>
+      <button id="openOut" type="button">باز کردن پوشهٔ خروجی</button></div>
+    <div id="links" class="links"></div>
+  </div>
+</section>
 </main>
 <script src="app.js"></script>
 </body>

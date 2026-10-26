@@ -116,7 +116,8 @@ def group_words(words: list[tuple[float, float, str]], max_chars=36, max_dur=4.5
 
     def flush():
         if cur:
-            segs.append({"start": cur[0][0], "end": cur[-1][1], "text": " ".join(w[2] for w in cur).strip()})
+            segs.append({"start": cur[0][0], "end": cur[-1][1], "text": " ".join(w[2] for w in cur).strip(),
+                         "words": [[round(w[0], 3), round(w[1], 3), w[2]] for w in cur]})
             cur.clear()
 
     for w in words:
@@ -160,7 +161,8 @@ def transcribe(model, path: str, duration: float | None = None, language: str = 
                 words += got or _spread(seg.start, seg.end, seg.text)
             segs = group_words(words)
             for s in segs:
-                s["text"] = clean_text(s["text"])
+                s["words"] = [[x[0], x[1], clean_text(x[2])] for x in s["words"]]
+                s["text"] = clean_text(" ".join(x[2] for x in s["words"]))
             return [s for s in segs if s["text"]]
         except Exception as e:  # noqa: BLE001
             if word_ts and count == 0:
